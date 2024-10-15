@@ -1,0 +1,99 @@
+### for MAKE Version 4.0  Copyright (c) 1987, 1996 Borland International ###
+
+#=== macro's ===
+C38 = SHC $< -ob=$* -DEBUG -CPU=SH4
+ASM = ASMSH $< -ob=$* -DEBUG -CPU=SH4
+LNK = LNK -SUBCOMMAND=$&.sub -DEBUG
+CNV = C38H $<
+#===============
+
+#=== roule's ===
+.c.obj:
+	$(C38)
+.src.obj:
+	$(ASM) # > $&.tag
+#===============
+
+#--- link's ---
+KERNEL = kernel\kernel.obj kernel\vkernel.obj kernel\cpu_sh4.obj \
+	 kernel\tmr_sh4.obj
+SYSTEM	= system\_setup.obj system\_initlow.obj \
+	  system\_init.obj system\_initsct.obj system\_initlib.obj \
+	  system\_initiol.obj system\_initoth.obj system\_closeal.obj \
+	  system\_lowsrc.obj system\_sctsrc.obj system\maintask.obj
+DEBUGER = dbg\__debug.obj dbg\__hlpdsp.obj dbg\__dbgmod.obj dbg\__dmpmem.obj \
+	  dbg\__dmpsiz.obj dbg\__wflash.obj dbg\__loadsf.obj dbg\__inimem.obj \
+	  dbg\__disasm.obj dbg\__chnmem.obj dbg\__chnmsz.obj dbg\__dmpwch.obj \
+	  dbg\__wchsiz.obj
+LIB = ..\..\lib\sh4nbmzz.lib
+#--------------
+
+#--- final target ---
+all:	nitron40.abs
+
+#--- make .abs ---
+nitron40.abs:	$(KERNEL) $(SYSTEM) $(DEBUGER) \
+		makefile
+	copy &&!
+OUTPUT $&
+PRINT $&
+ENTRY _vbr_adr
+INPUT $(SYSTEM)
+INPUT $(DEBUGER)
+INPUT $(KERNEL)
+START Prst(08000000)
+START Pexc(08000100)
+START Ptms(08000400)
+START Pitr,Ptrp,Psup,Dsup(08000600)
+START P,DBG_P1,C,D,Pce,R,B,DBG_B1,Bce(08001000)
+LIBRARY $(LIB)
+EXIT
+! $&.sub > nul
+	$(LNK)
+
+#--- make .obj (system) ---
+
+system\_setup.obj:	system\_setup.src
+	ASMSH $* -DEBUG -CPU=SH4
+
+system\_setup.src:	system\_setup.c
+	SHC $* -OB=$* -CPU=SH4 -CODE=ASMCODE
+
+system\_initlow.obj:	system\_initlow.c
+
+system\_init.obj:	system\_init.c
+
+system\_initsct.obj:	system\_initsct.c
+
+system\_initlib.obj:	system\_initlib.c
+
+system\_initiol.obj:	system\_initiol.c
+
+system\_initoth.obj:	system\_initoth.c
+
+system\_closeal.obj:	system\_closeal.c
+
+system\_lowsrc.obj:	system\_lowsrc.c
+
+system\_sctsrc.obj:	system\_sctsrc.src
+
+#--- make .obj (kernel) ---
+
+kernel\kernel.obj:	kernel\kernel.c include\system.h include\cpu_sh4.h \
+			include\vkernel.h include\itron.h include\kernel.h
+
+kernel\vkernel.obj:	kernel\vkernel.c include\system.h include\cpu_sh4.h \
+			include\vkernel.h include\itron.h include\kernel.h
+
+kernel\cpu_sh4.obj:	kernel\cpu_sh4.src
+	ASMSH $* -DEBUG -CPU=SH4
+
+kernel\cpu_sh4.src:	kernel\cpu_sh4.c include\system.h include\cpu_sh4.h \
+			include\vkernel.h include\itron.h include\kernel.h
+	SHC $* -OB=$* -CPU=SH4 -CODE=ASMCODE
+
+kernel\tmr_sh4.obj:	kernel\tmr_sh4.c include\system.h \
+			include\cpu_sh4.h include\vkernel.h \
+			include\itron.h include\kernel.h
+
+
